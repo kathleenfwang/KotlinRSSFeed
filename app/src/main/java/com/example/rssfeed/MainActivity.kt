@@ -1,9 +1,13 @@
 package com.example.rssfeed
 
+import android.content.Context
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.ArrayAdapter
+import android.widget.ListView
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.lang.StringBuilder
@@ -33,17 +37,24 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         Log.d(TAG, "onCreate start")
         val rssUrl = "http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/topfreeapplications/limit=10/xml"
-        DownloadTask().execute(rssUrl)
+        // android synthetically imports xmlListView so we don't have to do findViewById
+        DownloadTask(this,xmlListView).execute(rssUrl)
         Log.d(TAG, "onCreate end")
     }
 
-    private inner class DownloadTask : AsyncTask<String, Void, String>() {
+    private inner class DownloadTask(context: Context, listView: ListView): AsyncTask<String, Void, String>() {
         private val TAG ="DownloadActivity"
+
+        var propContext = context
+        var propListView = listView
         override fun onPostExecute(result: String) {
             super.onPostExecute(result)
 //            Log.d(TAG, "result: $result")
             val parseApplications = ParseApplications()
             parseApplications.parse(result)
+
+            var arrayAdapter = ArrayAdapter<FeedEntry>(propContext, R.layout.list_item, parseApplications.applications)
+            propListView.adapter = arrayAdapter
         }
 
         override fun doInBackground(vararg url: String?): String {
@@ -57,32 +68,6 @@ class MainActivity : AppCompatActivity() {
 
     }
     private fun downloadXML(urlPath: String?): String {
-//        val xmlResult = StringBuilder()
-//        try {
-//            val url = URL(urlPath)
-//            val connection: HttpURLConnection = url.openConnection() as HttpURLConnection
-//            val response = connection.responseCode
-//            Log.d(TAG, "downloadXML: Respone code is $response")
-////            val reader = BufferedReader(InputStreamReader(connection.inputStream))
-////            var charsRead = 0
-////            var inputBuffer = CharArray(500)
-////            while (charsRead >= 0) {
-////                charsRead = reader.read(inputBuffer)
-////                if (charsRead > 0) {
-////                    xmlResult.append(String(inputBuffer, 0, charsRead))
-////                }
-////            }
-////            reader.close()
-//            connection.inputStream.buffered().reader().use { xmlResult.append(it.readText())
-//            }
-//            Log.d(TAG, "Received ${xmlResult.length} bytes")
-//            return xmlResult.toString()
-//        }
-//        catch(e: Exception) {
-//                Log.e(TAG, "Error: ${e.message}")
-//            }
-//        // if nothing returned from try, return empty string
-//        return ""
         return URL(urlPath).readText()
     }
 }
